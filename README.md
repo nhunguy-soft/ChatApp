@@ -68,11 +68,11 @@ Terminal 1 — Server
 
 Terminal 2 — Client A
 ---
-<img width="750" alt="image" src="https://github.com/user-attachments/assets/e0fae7f6-2661-4bf6-abf3-09000f01cb88" />
+<img width="750" alt="image" src="https://github.com/user-attachments/assets/10f294d7-d0ce-4bde-8fbf-a17bc69750e8" />
 
 Terminal 3 — Client B
 ---
-<img width="750" alt="image" src="https://github.com/user-attachments/assets/b8aafe36-17af-4bb1-9e5a-be3052c02234" />
+<img width="750" alt="image" src="https://github.com/user-attachments/assets/528b6319-5da6-478d-aad6-b9c2dbba7a97" />
 
 Terminal 1 — Server
 ---
