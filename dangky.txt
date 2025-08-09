@@ -1,0 +1,109 @@
+Tên: Ngụy Thị Tâm Như
+MSSV: 4251050165
+Ứng dụng: Chat Console (OCSF)
+Mô tả: Ứng dụng chat console đa client. Mỗi client nhập tên, gửi tin nhắn; server nhận và broadcast tin nhắn tới tất cả client đang kết nối. Dựa trên framework OCSF (AbstractServer / AbstractClient).
+Cách hoạt động:
+- Client nhập tên → kết nối đến server.
+- Khi 1 client gửi tin nhắn, server nhận được và phát lại cho tất cả client (bao gồm người gửi).
+- Tất cả client sẽ thấy tin nhắn dạng:
+A: Hello
+B: Hi
+
+--- CODE: common/Message.java ---
+package common;
+import java.io.Serializable;
+public class Message implements Serializable {
+    private static final long serialVersionUID = 1L;
+    public String type;
+    public String sender;
+    public String payload;
+    public Message(String type, String sender, String payload) {
+        this.type = type;
+        this.sender = sender;
+        this.payload = payload;
+    }
+    public String getType() { return type; }
+    public String getSender() { return sender; }
+    public String getPayload() { return payload; }
+    @Override
+    public String toString() {
+        return "[" + type + "] " + sender + ": " + payload;
+    }
+}
+
+--- CODE: appserver/ChatServer.java ---
+package appserver;
+import ocsf.server.AbstractServer;
+import ocsf.server.ConnectionToClient;
+import common.Message;
+public class ChatServer extends AbstractServer {
+    public ChatServer(int port) { super(port); }
+    @Override
+    protected void handleMessageFromClient(Object msg, ConnectionToClient client) {
+        if (msg instanceof Message) {
+            Message m = (Message) msg;
+            System.out.println("Server nhận: " + m.toString());
+            try { sendToAllClients(m); } catch (Exception e) { System.err.println(e.getMessage()); }
+        } else { System.out.println("Server nhận object lạ: " + msg); }
+    }
+    @Override protected void serverStarted() { System.out.println("Server đã khởi động. Lắng nghe cổng " + getPort()); }
+    @Override protected void serverStopped() { System.out.println("Server đã dừng."); }
+}
+
+--- CODE: appclient/ChatClient.java ---
+package appclient;
+import ocsf.client.AbstractClient;
+import common.Message;
+public class ChatClient extends AbstractClient {
+    private final String username;
+    public ChatClient(String host, int port, String username) { super(host, port); this.username = username; }
+    @Override
+    protected void handleMessageFromServer(Object msg) {
+        if (msg instanceof Message) {
+            Message m = (Message) msg;
+            System.out.println(m.toString());
+        } else { System.out.println("Nhận từ server (không phải Message): " + msg); }
+    }
+    public void sendChat(String text) {
+        try { sendToServer(new Message("CHAT", username, text)); }
+        catch (Exception e) { System.err.println("Không thể gửi message: " + e.getMessage()); }
+    }
+}
+
+--- CODE: MainServer.java ---
+import appserver.ChatServer;
+public class MainServer {
+    public static void main(String[] args) {
+        int port = 5555;
+        ChatServer server = new ChatServer(port);
+        try { server.listen(); } catch (Exception e) { System.err.println("Không thể khởi động server: " + e.getMessage()); }
+    }
+}
+
+--- CODE: MainClient.java ---
+import appclient.ChatClient;
+import java.util.Scanner;
+public class MainClient {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        System.out.print("Nhập tên người dùng: ");
+        String name = sc.nextLine().trim();
+        if (name.isEmpty()) name = "Anonymous";
+        ChatClient client = new ChatClient("localhost", 5555, name);
+        try {
+            client.openConnection();
+            System.out.println("Đã kết nối tới server. Gõ 'exit' để thoát.");
+            while (true) {
+                String line = sc.nextLine();
+                if (line == null) break;
+                if (line.equalsIgnoreCase("exit")) break;
+                if (line.trim().isEmpty()) continue;
+                client.sendChat(line);
+            }
+            client.closeConnection();
+            System.out.println("Đã ngắt kết nối. Thoát chương trình.");
+        } catch (Exception e) {
+            System.err.println("Lỗi khi kết nối hoặc gửi: " + e.getMessage());
+        } finally { sc.close(); }
+    }
+}
